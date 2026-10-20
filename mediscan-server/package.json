@@ -1,0 +1,13 @@
+{
+  "name": "mediscan-server",
+  "version": "1.0.0",
+  "description": "Independent 24/7 Medicine Safety & Drug Interaction Server for Mediscan AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5"
+  }
+}

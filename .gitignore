@@ -1,0 +1,15 @@
+*~
+.idea/
+.gradle/
+*.iml
+local.properties
+app/build/
+build/
+captures/
+.DS_Store
+plugins/
+.vscode
+*.tmp
+*.apk
+node_modules/
+
