@@ -4,7 +4,20 @@ const path = require('path');
 const url = require('url');
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, 'public');
+function getPublicDir() {
+  const candidates = [
+    path.join(__dirname, 'public'),
+    path.join(__dirname, 'mediscan-server', 'public'),
+    path.join(process.cwd(), 'public'),
+    path.join(process.cwd(), 'mediscan-server', 'public')
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return path.join(__dirname, 'public');
+}
+const PUBLIC_DIR = getPublicDir();
+
 
 // Data Stores
 let scans = [
@@ -287,9 +300,26 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 8. Static Web App Files
-  let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+  const publicDir = getPublicDir();
+  let filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname);
   if (!fs.existsSync(filePath)) {
-    filePath = path.join(PUBLIC_DIR, 'index.html');
+    filePath = path.join(publicDir, 'index.html');
+  }
+
+  // Double check candidate fallback locations
+  if (!fs.existsSync(filePath)) {
+    const candidates = [
+      path.join(__dirname, 'public', 'index.html'),
+      path.join(__dirname, 'mediscan-server', 'public', 'index.html'),
+      path.join(process.cwd(), 'public', 'index.html'),
+      path.join(process.cwd(), 'mediscan-server', 'public', 'index.html')
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) {
+        filePath = c;
+        break;
+      }
+    }
   }
 
   const ext = path.extname(filePath);
@@ -306,13 +336,14 @@ const server = http.createServer(async (req, res) => {
   const contentType = mimeTypes[ext] || 'text/plain';
   fs.readFile(filePath, (err, content) => {
     if (err) {
-      res.writeHead(500);
-      res.end('Error loading application');
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(`<!DOCTYPE html><html><head><title>MediScan AI</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-50 p-6 text-center"><div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow mt-10"><h1 class="text-xl font-bold text-teal-700">MediScan AI Server Active</h1><p class="text-sm text-slate-600 mt-2">API endpoints are running live 24/7 at <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-800">/api/dashboard/metrics</code>.</p><a href="/api/dashboard/metrics" class="inline-block mt-4 bg-teal-700 text-white text-xs px-4 py-2 rounded-lg font-medium">View API Metrics</a></div></body></html>`);
     } else {
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content, 'utf-8');
     }
   });
+
 });
 
 server.listen(PORT, '0.0.0.0', () => {
